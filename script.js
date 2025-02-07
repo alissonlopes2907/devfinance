@@ -1,3 +1,5 @@
+
+
 //Configuração para adicionar novas transações no sistema
 const Modal = {
   open() {
@@ -14,69 +16,79 @@ const Modal = {
 
     document.querySelector('.footer').classList.remove('Transparent')
   }
-}
+} //parte de fechamento e abertura do modal
 
-const Storage = {
-  get() {
-    return JSON.parse(localStorage.getItem('dev.finances:transactions')) || []
-  },
-  set(transactions) {
-    localStorage.setItem(
-      'dev.finances:transactions',
-      JSON.stringify(transactions)
-    )
-  }
-}
+
 //Fazer as operações matematica na calculadora
 const Transaction = {
-  all: Storage.get(),
+  
+  async remove(id) {
+  //  Transaction.all.splice(index, 1) //remove as transações
 
-  add(transaction) {
-    Transaction.all.push(transaction)
-  },
-
-  remove(index) {
-    Transaction.all.splice(index, 1)
+    const response = await fetch(`http://localhost:3333/transactions/${id}`, {
+      method: 'DELETE'
+    })
 
     App.reload()
   },
 
-  incomes() {
-    //Somar todas as entradas
-    //para cada transação
-    let income = 0
+ async incomes() {
+       
+  const response = await fetch('http://localhost:3333/transactions')
 
-    Transaction.all.forEach(transaction => {
+  if (!response.ok) {
+   throw new Error('Erro na requisição: ' + response.status);
+
+  }
+ let transactions = await response.json();
+
+ 
+    let income = 0
+    transactions.forEach(transaction => {
+      transaction.amount = Number(transaction.amount)
       // se ela for maior que zero
       if (transaction.amount > 0) {
         // somar a uma variavel e retornar a variavel
         income += transaction.amount
       }
     })
-    return income
+    console.log(income)
+    return income 
   },
-  expenses() {
-    //somas as saídas
-    let expense = 0
+  async expenses() {
+    const response = await fetch('http://localhost:3333/transactions')
 
-    Transaction.all.forEach(transaction => {
+    if (!response.ok) {
+     throw new Error('Erro na requisição: ' + response.status);
+  
+    }
+   let transactions = await response.json();
+
+
+    let expense = 0
+    transactions.forEach(transaction => {
+      transaction.amount = Number(transaction.amount)
       // se ela for maior que zero
       if (transaction.amount < 0) {
         // somar a uma variavel e retornar a variavel
         expense += transaction.amount
+        
       }
     })
-
+        console.log(expense)
     return expense
   },
-  total() {
+  async total() {
+    const income = await Transaction.incomes()  
+    const expense = await Transaction.expenses()
     //entradas - saídas
-    return Transaction.incomes() + Transaction.expenses()
+    return income + expense
   }
 }
 
 const DOM = {
   transactionsContainer: document.querySelector('#data-table tbody'),
+  transactionsData: transaction,
   addTransaction(transaction, index) {
     const tr = document.createElement('tr') //Criou uma variavel chamada tr e adicionou um elemento html chamado tr
 
@@ -84,24 +96,30 @@ const DOM = {
     tr.dataset.index = index
     DOM.transactionsContainer.appendChild(tr)
   },
+  removeData(id) {
+    console.log('Data do dom: ', id)
 
-  innerHTMLTransaction(transaction, index) {
+ },
+  innerHTMLTransaction(transaction) {
+    console.log("tESTE: ",transaction)
     //Trata-se de um ternario, que irá identificar se o valor é maior que zero, se for, ele acrescentará income, caso contrario, colocará expense
-    const CSSclass = transaction.amount > 0 ? 'income' : 'expense'
+    const id = transaction.id
 
-    const amount = utils.formatCurrency(transaction.amount)
-    /*Função que tem uma variavel constante chamada html, ela será retornada para uma outra função dentro desse object*/
+    const CSSclass = transaction.amount > 0 ? 'income' : 'expense'
+   
+    const amount = transaction.amount
+
+    /*Função que tem uma variavel constante chamada html, ela será retornada para uma outra função dentro desse object*/ 
 
     let icone =
       transaction.amount > 0 ? './images/plus.svg' : './images/minus.svg'
 
     const html = `
-   
     <td class="description">${transaction.description}</td> 
     <td class="${CSSclass}">${amount}</td>
     <td class="date">${transaction.date}</td>
     <td>
-      <img onclick=" Transaction.remove(${index})" src="${icone}" alt="Remover transação" />
+      <img onclick="Transaction.remove('${id}')" src="${icone}" alt="Remover transação" />
     </td>
     `
     //Como fazer o icone das transações ser factivel com os valores de entrada e saída??????
@@ -110,15 +128,15 @@ const DOM = {
     return html
   },
 
-  updateBalance() {
+  async updateBalance() {
     document.getElementById('incomeDisplay').innerHTML = utils.formatCurrency(
-      Transaction.incomes()
+      await Transaction.incomes()
     )
     document.getElementById('expenseDisplay').innerHTML = utils.formatCurrency(
-      Transaction.expenses()
+     await Transaction.expenses()
     )
     document.getElementById('totalDisplay').innerHTML = utils.formatCurrency(
-      Transaction.total()
+    await Transaction.total()
     )
   },
 
@@ -128,14 +146,20 @@ const DOM = {
 }
 const utils = {
   formatAmount(value) {
-    value = Number(value) * 100
+    value = Number(value) 
 
     return value
   },
 
   formatDate(date) {
-    const splittedDate = date.split('-')
-    return `${splittedDate[2]}/${splittedDate[1]}/${splittedDate[0]}`
+     
+    const data = new Date(date)
+
+    const day = String(data.getUTCDate()).padStart(2, "0");
+    const month = String(data.getUTCMonth() + 1).padStart(2, "0");
+    const year = data.getUTCFullYear();
+  
+    return `${day}/${month}/${year}`;
   },
 
   formatCurrency(value) {
@@ -143,7 +167,7 @@ const utils = {
 
     value = String(value).replace(/\D/g, '')
 
-    value = Number(value) / 100
+    value = Number(value) 
 
     value = value.toLocaleString('pt-BR', {
       style: 'currency',
@@ -191,23 +215,30 @@ const Form = {
     }
   },
 
-  saveTransaction(transaction) {
-    Transaction.add(transaction)
+  async saveTransaction(transaction) {
+    const result = await fetch('http://localhost:3333/transactions', {
+      method: 'POST',
+      body: JSON.stringify(transaction)
+    })
+    console.log(result)
+  
   },
   clearFields() {
     Form.description.value = ''
     Form.amount.value = ''
     Form.date.value = ''
   },
-  submit(event) {
+  async submit(event) {
     event.preventDefault()
+
+
 
     try {
       Form.validateFields()
       const transaction = Form.formatValues()
       Modal.close()
       Form.clearFields()
-      Form.saveTransaction(transaction)
+      await Form.saveTransaction(transaction)
 
       App.reload()
     } catch (error) {
@@ -217,12 +248,30 @@ const Form = {
 }
 
 const App = {
-  init() {
-    Transaction.all.forEach(DOM.addTransaction)
+ async init() {
+      
+    const response = await fetch('http://localhost:3333/transactions')
 
+     if (!response.ok) {
+      throw new Error('Erro na requisição: ' + response.status);
+
+     }
+    let transactions = await response.json();
+
+    
+
+   for ( let i =0 ; i< transactions.length ; i++) {
+          transactions[i].date = utils.formatDate(transactions[i].date)
+    }
+    
+
+    
+    transactions.forEach(DOM.addTransaction)
+    
     //Usando a mesma lógica do for, o forEach irá contar quantos objetos há dentro do vetor e executara com base na quantidade uma funcionalidade, colocando dentro do transction da linha 37 o um dos objects
-    Storage.set(Transaction.all)
+   // transactions.set(Transaction.all)
     DOM.updateBalance()
+    
   },
   reload() {
     DOM.clearTransactions()
