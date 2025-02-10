@@ -1,3 +1,4 @@
+const port = '1516'
 class Storage {
   constructor() {
     this._id = {};
@@ -64,7 +65,7 @@ const ModalUpdate = { //Atualizar algum dados da transação
 
     console.log('Dados de id dentro do modal: ', id)
 
-    const response = await fetch(`http://localhost:3000/transactionsid/${id}`)
+    const response = await fetch(`http://localhost:${port}/transactionsid/${id}`)
 
     if (!response.ok) {
      throw new Error('Erro na requisição: ' + response);
@@ -108,7 +109,7 @@ const Transaction = {
   async remove(id) {
   //  Transaction.all.splice(index, 1) //remove as transações
 
-      await fetch(`http://localhost:3000/transactions/${id}`, {
+      await fetch(`http://localhost:${port}/transactions/${id}`, {
       method: 'DELETE'
     })
 
@@ -117,7 +118,7 @@ const Transaction = {
 
  async incomes() {
        
-  const response = await fetch('http://localhost:3000/transactions')
+  const response = await fetch('http://localhost:${port}/transactions')
 
   if (!response.ok) {
    throw new Error('Erro na requisição: ' + response.status);
@@ -139,7 +140,7 @@ const Transaction = {
     return income 
   },
   async expenses() {
-    const response = await fetch('http://localhost:3000/transactions')
+    const response = await fetch(`http://localhost:${port}/transactions`)
 
     if (!response.ok) {
      throw new Error('Erro na requisição: ' + response.status);
@@ -294,7 +295,7 @@ const Form = {
   async saveTransaction(transaction) {
    
 
-    const result = await fetch('http://localhost:3000/transactions', {
+    const result = await fetch(`http://localhost:${port}/transactions`, {
       method: 'POST',
       headers: {
          'Content-Type': 'application/json'
@@ -340,7 +341,7 @@ const Form = {
     
     try {    
       
-      const result = await fetch(`http://localhost:3000/transactions/${id}`, {
+      const result = await fetch(`http://localhost:${port}/transactions/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -421,7 +422,7 @@ const Form = {
 const App = {
  async init() {
       
-    const response = await fetch('http://localhost:3000/transactions')
+    const response = await fetch(`http://localhost:${port}/transactions`)
 
      if (!response.ok) {
       throw new Error('Erro na requisição: ' + response.status);
