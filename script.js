@@ -1,4 +1,43 @@
+class Storage {
+  constructor() {
+    this._id = {};
+    this._transactions = {}; // Agora é um array para armazenar várias transações
+  }
 
+  getID() {
+    return this._id['id'];
+  }
+
+  setID(idData) {
+    console.log('ID dentro do storage: ', idData);
+    this._id['id'] = idData; // Agora armazena o ID diretamente
+    return 'Salvo com sucesso';
+  }
+
+  deleteID() {
+    this._id['id'] = null;
+    return 'Deletado com sucesso';
+  }
+
+  getTransactions() {
+    return this._transactions['transactions'];
+  }
+
+  setTransactions(description, amount, date) {
+    console.log('Dados da transação no storage:', description, '-', amount, '-', date);
+    const transaction = { description, amount, date };
+    this._transactions['transactions'] = transaction; // Adiciona a nova transação ao array
+    return 'Salvo com sucesso';
+  }
+
+  deleteTransactions() {
+    this._transactions['transactions'] = {}; // Limpa todas as transações
+    return 'Deletado com sucesso';
+  }
+}
+
+
+let storageID = new Storage()
 
 //Configuração para adicionar novas transações no sistema
 const Modal = {
@@ -10,6 +49,8 @@ const Modal = {
   },
 
   close() {
+
+
     //Fechar Modal
     //Para fechar modal, tem que remover a classe active do Modal
     document.querySelector('.modal-overlay').classList.remove('active') //removendo active de modal-overlay
@@ -18,14 +59,56 @@ const Modal = {
   }
 } //parte de fechamento e abertura do modal
 
+const ModalUpdate = { //Atualizar algum dados da transação
+  async openUpdate(id) {
 
+    console.log('Dados de id dentro do modal: ', id)
+
+    const response = await fetch(`http://localhost:3000/transactionsid/${id}`)
+
+    if (!response.ok) {
+     throw new Error('Erro na requisição: ' + response);
+    }
+
+    let transaction = await response.json()
+    console.log('Dados de transação dentro do modal: ', transaction)
+
+    //tratamento de datas
+    transaction[0].date = new Date(transaction[0].date).toISOString().slice(0, 10)
+
+    //Abrir modal
+    //Para abrir modal, tem que adicionar a classe active ao modal
+    document.querySelector('.modal-overlayUpdate').classList.add('activeUpdate') //selecionando a classe modal-overlay e atribuindo a classa active junto a ela
+    document.querySelector('.footer').classList.add('Transparent')
+
+   
+    document.querySelector('input#descriptionUpdate').value = transaction[0].description
+    document.querySelector('input#amountUpdate').value = transaction[0].amount 
+    document.querySelector('input#dateUpdate').value = transaction[0].date
+   
+   
+   await storageID.setID(id)
+
+
+
+
+  },
+
+  closeUpdate() {
+    //Fechar Modal
+    //Para fechar modal, tem que remover a classe active do Modal
+    document.querySelector('.modal-overlayUpdate').classList.remove('activeUpdate') //removendo active de modal-overlay
+
+    document.querySelector('.footer').classList.remove('Transparent')
+  }
+} //parte de fechamento e abertura do modal
 //Fazer as operações matematica na calculadora
 const Transaction = {
   
   async remove(id) {
   //  Transaction.all.splice(index, 1) //remove as transações
 
-    const response = await fetch(`http://localhost:1516/transactions/${id}`, {
+      await fetch(`http://localhost:3000/transactions/${id}`, {
       method: 'DELETE'
     })
 
@@ -34,7 +117,7 @@ const Transaction = {
 
  async incomes() {
        
-  const response = await fetch('http://localhost:1516/transactions')
+  const response = await fetch('http://localhost:3000/transactions')
 
   if (!response.ok) {
    throw new Error('Erro na requisição: ' + response.status);
@@ -56,7 +139,7 @@ const Transaction = {
     return income 
   },
   async expenses() {
-    const response = await fetch('http://localhost:1516/transactions')
+    const response = await fetch('http://localhost:3000/transactions')
 
     if (!response.ok) {
      throw new Error('Erro na requisição: ' + response.status);
@@ -86,10 +169,14 @@ const Transaction = {
   }
 }
 
+
+
 const DOM = {
   transactionsContainer: document.querySelector('#data-table tbody'),
-  transactionsData: transaction,
+  transactionsData: Transaction,
   addTransaction(transaction, index) {
+
+    
     const tr = document.createElement('tr') //Criou uma variavel chamada tr e adicionou um elemento html chamado tr
 
     tr.innerHTML = DOM.innerHTMLTransaction(transaction, index) //adicionou dentro do elemento dessa variavel a constante que foi criada em innerHTMLTransaction(), ficando como <tr>html</tr>
@@ -101,9 +188,10 @@ const DOM = {
 
  },
   innerHTMLTransaction(transaction) {
-    console.log("tESTE: ",transaction)
+    
     //Trata-se de um ternario, que irá identificar se o valor é maior que zero, se for, ele acrescentará income, caso contrario, colocará expense
     const id = transaction.id
+    console.log('ID: ', id)
 
     const CSSclass = transaction.amount > 0 ? 'income' : 'expense'
    
@@ -115,9 +203,9 @@ const DOM = {
       transaction.amount > 0 ? './images/plus.svg' : './images/minus.svg'
 
     const html = `
-    <td class="description">${transaction.description}</td> 
+    <td class="description" onclick="ModalUpdate.openUpdate('${id}')">${transaction.description}</td> 
     <td class="${CSSclass}">${amount}</td>
-    <td class="date">${transaction.date}</td>
+    <td class="date" >${transaction.date}</td>
     <td>
       <img onclick="Transaction.remove('${id}')" src="${icone}" alt="Remover transação" />
     </td>
@@ -145,11 +233,7 @@ const DOM = {
   }
 }
 const utils = {
-  formatAmount(value) {
-    value = Number(value) 
-
-    return value
-  },
+  
 
   formatDate(date) {
      
@@ -178,68 +262,155 @@ const utils = {
 }
 
 const Form = {
-  description: document.querySelector('input#description'),
-  amount: document.querySelector('input#amount'),
-  date: document.querySelector('input#date'),
 
   getValues() {
-    return {
-      description: Form.description.value,
-      amount: Form.amount.value,
-      date: Form.date.value
-    }
+    let description = document.querySelector('input#description').value 
+    let amount = document.querySelector('input#amount').value
+    let date = document.querySelector('input#date').value 
+ ///   await storageID.setTransaction(description, amount, date)
+    storageID.setTransactions(description, amount, date)
+    return 'Salvo com sucesso!'
   },
+   getValuesUpdate() {
+    let descriptionUp = document.querySelector('input#descriptionUpdate').value 
+    let amountUp = document.querySelector('input#amountUpdate').value
+    let dateUp = document.querySelector('input#dateUpdate').value 
+   console.log('Dados do update depois: ', descriptionUp, amountUp, dateUp)
+   
+   if (descriptionUp === '' || amountUp === '' || dateUp === '') {
+    throw new Error('Preencha todos os campos')}
+    
+   storageID.setTransactions(descriptionUp, amountUp, dateUp)
 
-  validateFields() {
-    const { description, amount, date } = Form.getValues()
 
-    if (
-      description.trim() === '' ||
-      amount.trim() === '' ||
-      date.trim() === ''
-    ) {
-      throw new Error('Por favor, preencha todos os campos.')
-    }
+ 
+ //  storageID.setTransaction(descriptionUp, amountUp, dateUp)
+   return 'Salvo update com sucesso!'
+  
+
   },
-
-  formatValues() {
-    let { description, amount, date } = Form.getValues()
-
-    amount = utils.formatAmount(amount)
-    date = utils.formatDate(date)
-
-    return {
-      description,
-      amount,
-      date
-    }
-  },
+  
 
   async saveTransaction(transaction) {
-    const result = await fetch('http://localhost:1516/transactions', {
+   
+
+    const result = await fetch('http://localhost:3000/transactions', {
       method: 'POST',
+      headers: {
+         'Content-Type': 'application/json'
+      },
       body: JSON.stringify(transaction)
     })
+
+
     console.log(result)
+
+    return 
   
   },
   clearFields() {
-    Form.description.value = ''
-    Form.amount.value = ''
-    Form.date.value = ''
+   document.querySelector('input#description').value = ''
+   document.querySelector('input#amount').value = ''
+   document.querySelector('input#date').value =''
   },
-  async submit(event) {
-    event.preventDefault()
 
+  clearFieldsUpdate() {
+    document.querySelector('input#descriptionUpdate').value = ''
+    document.querySelector('input#amountUpdate').value = ''
+    document.querySelector('input#dateUpdate').value =''
+  },
+ async saveTransactionUpdate(transaction, id) {
+
+ 
+
+
+    console.log('Dados do update: ', transaction, id)
+    
+    transaction.amount = Number(transaction.amount)
+    console.log(transaction)
+    
+
+    const bodyOptions = {
+      description: transaction.description,
+      amount: transaction.amount,
+      date: transaction.date  
+    }
+
+    console.log( 'Dados do bodyOptions: ',bodyOptions)
+    
+    try {    
+      
+      const result = await fetch(`http://localhost:3000/transactions/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bodyOptions)
+    })
+
+    console.log(result)
+   return result
+  } catch (error) {
+      console.log(error)
+    }
+
+  
+    
+    
+ },
+ 
+   async submit(event) {
+    event.preventDefault()
+    
 
 
     try {
-      Form.validateFields()
-      const transaction = Form.formatValues()
+      
+      console.log(Form.getValues())
+
+        
       Modal.close()
       Form.clearFields()
-      await Form.saveTransaction(transaction)
+ 
+      let transaction = storageID.getTransactions()
+   //   let  transaction =  storageID.getTransaction()
+      console.log('DADOS DO UPDATE DENTRO DO SAVE: ',transaction)
 
+       await Form.saveTransaction(transaction)
+
+   
+   
+      storageID.deleteTransactions()
+
+      App.reload()
+    } catch (error) {
+      alert(error.message)
+    }
+  },
+
+  async submitUpdate(event) {
+    event.preventDefault()
+    
+    console.log('Dados do submitUpdate: ', event)
+    
+
+    try {
+      console.log( Form.getValuesUpdate())    
+
+
+      let  id =   storageID.getID()
+      console.log('ID DO UPDATE DENTRO DO SAVE: ',id)
+    //  let  transaction =  storageID.getTransaction()
+      let transaction = storageID.getTransactions()
+      console.log('TRANSACTION DO UPDATE DENTRO DO SAVE: ',Transaction)
+     await Form.saveTransactionUpdate(transaction, id)
+
+       ModalUpdate.closeUpdate()
+       Form.clearFields()
+
+       storageID.deleteID()
+       storageID.deleteTransactions()
+ 
       App.reload()
     } catch (error) {
       alert(error.message)
@@ -250,7 +421,7 @@ const Form = {
 const App = {
  async init() {
       
-    const response = await fetch('http://localhost:1516/transactions')
+    const response = await fetch('http://localhost:3000/transactions')
 
      if (!response.ok) {
       throw new Error('Erro na requisição: ' + response.status);
@@ -259,7 +430,7 @@ const App = {
     let transactions = await response.json();
 
     
-
+   console.log('Transactions: ', transactions)
    for ( let i =0 ; i< transactions.length ; i++) {
           transactions[i].date = utils.formatDate(transactions[i].date)
     }

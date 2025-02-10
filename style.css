@@ -267,3 +267,88 @@ input {
     gap: 2rem;
   }
 }
+
+
+/** Modal overlay update ==============*/
+
+/*Modal====================*/
+.modal-overlayUpdate {
+  width: 100%;
+  height: 100%;
+
+  background-color: rgba(0, 0, 0, 0.7);
+
+  position: fixed;
+  top: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  visibility: hidden;
+}
+
+.modal-overlayUpdate.activeUpdate {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modalUpdate {
+  background: #f0f2f5;
+  padding: 2.4rem;
+}
+
+/* Modal form Update ==============*/
+#formUpdate {
+  max-width: 500px;
+}
+
+#formUpdate h2 {
+  margin-top: 0;
+}
+
+input {
+  border: none;
+  border-radius: 0.2rem;
+
+  padding: 0.8rem;
+  width: 100%;
+}
+
+.input-group-update {
+  margin-top: 0.8rem;
+}
+
+.input-group-update small {
+  opacity: 0.4;
+}
+
+.input-group-update.actionsUpdate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-group-update.actionsUpdate .buttonUpdate,
+.input-group-update.actionsUpdate button {
+  width: 48%;
+}
+
+.buttonUpdate.cancelUpdate {
+  color: var(--red);
+  border: 2px var(--red) solid;
+  border-radius: 0.25rem;
+
+  height: 50px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0.6;
+}
+
+.buttonUpdate.cancelUpdate:hover {
+  opacity: 1;
+}
